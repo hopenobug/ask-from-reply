@@ -1,7 +1,6 @@
 {
 	"name": "ask-from-reply",
 	"version": "0.1.0",
-	"private": true,
 	"description": "Turn the questions in the assistant's latest reply into an interactive questionnaire",
 	"type": "module",
 	"keywords": [
