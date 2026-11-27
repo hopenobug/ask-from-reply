@@ -6,7 +6,7 @@ extraction output, delay and failure is chosen by the test.
 
 | Command | What it proves |
 | --- | --- |
-| `npm run e2e` | 20 scenarios over `pi --mode rpc`: extraction → questionnaire → compact answer envelope back in the conversation, plus both settings-file locations and every extractor failure mode |
+| `npm run e2e` | 21 scenarios over `pi --mode rpc`: extraction → questionnaire → compact answer envelope back in the conversation, plus both settings-file locations, a Chinese reply whose question and options are shaped differently (`用哪个缓存：` + bullets, `要不要…`), and every extractor failure mode |
 | `npm run e2e:tui` | 3 scenarios in a real terminal under herdr-core: the dialog mounts, a digit answers it, the answer line reaches the transcript; the Submit tab shows one preview at a time and `p` flips it; `submit: "editor"` parks the answers in the input box and sends nothing until enter |
 
 `npm test` stays offline and unit-only: the files here are named `*.e2e.mjs` on purpose, so

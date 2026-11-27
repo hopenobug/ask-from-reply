@@ -113,6 +113,60 @@ test("a list longer than the block cap is split, never dropping a line", () => {
 	assert.ok(fragments.includes("Next steps:"), `the introducing line was dropped: ${JSON.stringify(fragments)}`);
 });
 
+test("a Chinese numbered list is a list, in every marker it is written with", () => {
+	const reply = `下一步：
+1、重命名模块
+2、拆分测试`;
+	assert.equal(focusQuestionFragments(reply), reply);
+	// The CJK marker does not need a space after it, and the parenthesis forms count too.
+	for (const marker of ["1.", "1)", "1、", "1．", "(1)", "（1）", "①"]) {
+		const list = `下一步：\n${marker} 重命名\n${marker} 拆分`;
+		assert.ok(
+			focusQuestionFragments(list).includes("重命名"),
+			`the ${JSON.stringify(marker)} list opened no block: ${JSON.stringify(focusQuestionFragments(list))}`,
+		);
+	}
+});
+
+test("a lettered list of next steps is a list too", () => {
+	const reply = `Next steps:\na) Run the suite\nb) Split the extractor`;
+	assert.equal(focusQuestionFragments(reply), reply);
+});
+
+test("a bullet list under a question is kept as its options", () => {
+	// Bullets never open a block, but the question above them does — and the items are the
+	// answers to pick from, so the block swallows them.
+	const reply = `Which cache should we use?\n\n- no cache\n- memory cache`;
+	assert.equal(focusQuestionFragments(reply), reply);
+});
+
+test("a bullet list with no question over it still opens nothing", () => {
+	const reply = `Here is the plan:\n\n- rename the module\n- split the tests`;
+	assert.equal(focusQuestionFragments(reply), reply);
+});
+
+test("a colon line that names a choice is a question, so its bullet list is options", () => {
+	const reply = `用哪个缓存：\n- 不缓存\n- 内存缓存`;
+	assert.equal(focusQuestionFragments(reply), reply);
+	const english = `Which cache:\n- none\n- memory`;
+	assert.equal(focusQuestionFragments(english), english);
+});
+
+test("a Chinese question needs no question mark", () => {
+	// `吗` and `呢` end a question without one, and the list under it is its options.
+	const reply = `我先改了提取器。\n\n要不要顺手把测试也拆了\n1. 拆\n2. 不拆`;
+	assert.equal(focusQuestionFragments(reply), `要不要顺手把测试也拆了\n1. 拆\n2. 不拆`);
+	assert.equal(focusQuestionFragments("还有别的呢"), "还有别的呢");
+});
+
+test("a yes/no opening is a question, a statement about it is not", () => {
+	// `要不要…` opens the question; the full stop at the end would make it a statement.
+	const reply = `要不要我把测试也拆了\n\n这是下一步。`;
+	assert.equal(focusQuestionFragments(reply), "要不要我把测试也拆了");
+	const statement = `是否要拆由你决定。\n\nUnrelated prose.`;
+	assert.equal(focusQuestionFragments(statement), statement);
+});
+
 test("replyTail keeps the last characters, counted in code points", () => {
 	assert.equal(replyTail("abcdef", 3), "def");
 	// An emoji is two UTF-16 units but one code point: slicing by units would cut a

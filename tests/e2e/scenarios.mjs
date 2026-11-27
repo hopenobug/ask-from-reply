@@ -128,6 +128,22 @@ const FINDINGS_REPLY = [
 ].join("\n");
 
 /**
+ * A Chinese reply that asks with a choice-naming colon line and a bullet list of options, plus
+ * a `吗` question without a question mark: both shapes have to reach the extractor.
+ */
+const CHINESE_REPLY = [
+	"我先看了下代码，问题不大。",
+	"",
+	"用哪个缓存：",
+	"",
+	"- 不缓存",
+	"- 内存缓存带 TTL",
+	"- 磁盘缓存",
+	"",
+	"要不要我顺手把测试也拆了",
+].join("\n");
+
+/**
  * A reply whose question sits far past the tail window: the extractor must only see the
  * tail. Plain ASCII, so `slice(-120)` below is the same window `replyTail` cuts.
  */
@@ -419,6 +435,40 @@ export const SCENARIOS = [
 				prompt.includes("reports facts"),
 				`the prompt never tells the model a findings list is not a question: ${prompt.slice(0, 600)}`,
 			);
+		},
+	},
+	{
+		name: "a Chinese reply keeps its choice question and its bullet options",
+		reply: CHINESE_REPLY,
+		extract: questionsJson([
+			{
+				question: "用哪个缓存？",
+				header: "缓存",
+				multiSelect: false,
+				options: [
+					{ label: "不缓存", description: "每次都重新算" },
+					{ label: "内存缓存带 TTL", description: "进程内复用" },
+					{ label: "磁盘缓存", description: "跨进程复用" },
+				],
+			},
+		]),
+		answer(request) {
+			requireMethod(request, "select", "one single-select question");
+			return { value: request.options[1] };
+		},
+		check({ message, fake }) {
+			const [line] = assertCompactEnvelope(message, { maxLines: 1 });
+			assert.equal(line.key, "缓存");
+			// The question text is the model's, not the reply's, so the answer degrades to the label.
+			assert.equal(line.value, "内存缓存带 TTL");
+			// The choice-naming colon line and its bullet list must both reach the extractor: the
+			// filter opens the block on the question, and the bullets are its options.
+			const { seen } = lastExtraction(fake);
+			for (const fragment of ["用哪个缓存：", "- 不缓存", "- 内存缓存带 TTL", "- 磁盘缓存", "要不要我顺手把测试也拆了"]) {
+				assert.ok(seen.includes(fragment), `the extractor never saw ${JSON.stringify(fragment)}: ${JSON.stringify(seen)}`);
+			}
+			// The prose above the question is not part of any block.
+			assert.ok(!seen.includes("我先看了下代码"), `prose leaked into the fragments: ${JSON.stringify(seen)}`);
 		},
 	},
 	{

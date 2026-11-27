@@ -27,10 +27,13 @@ The refactor is done. Next steps:
 ```
 
 The list is the question — one option per numbered item, as a multi-select question, because next
-steps can be done together (a single-item list becomes a Yes/No question instead). A bullet or
-dash list is not a question. The same rule is what the extraction prompt tells the model, and
-what `src/fragments.ts` keeps in front of it: see [`tests/e2e/README.md`](tests/e2e/README.md)
-for the end-to-end scenario that pins it.
+steps can be done together (a single-item list becomes a Yes/No question instead). A numbered or
+lettered list is what counts: `1.` `1)` `1、` `（1）` `①` and `a)` all open one. A bullet or dash list
+is not a question on its own, but when a question line introduces it its items are that question's
+options — which is why `用哪个缓存：` / `Which cache:` counts as a question even without a `?`. So
+does a Chinese line ending in `吗`/`呢` or opening with `要不要`/`是否`. The same rules are what the
+extraction prompt tells the model, and what `src/fragments.ts` keeps in front of it: see
+[`tests/e2e/README.md`](tests/e2e/README.md) for the end-to-end scenario that pins them.
 
 ## Use
 
@@ -109,7 +112,7 @@ upstream license text are in [`NOTICE`](NOTICE).
 ```bash
 npm test          # unit tests only, offline
 npm run typecheck # tsc over every source file
-npm run e2e       # 20 scenarios over `pi --mode rpc`
+npm run e2e       # 21 scenarios over `pi --mode rpc`
 npm run e2e:tui   # 3 scenarios in a real terminal under herdr-core
 npm run verify    # all four, in that order: the full gate
 ```
