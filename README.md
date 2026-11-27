@@ -16,6 +16,22 @@ Which cache should we use for the index?
 becomes a dialog with one question and three options. Picking the second one appends
 `Cache → 2` to the conversation instead of making you retype the question and answer.
 
+A reply that lists numbered next steps asks something too, even without a `?`:
+
+```
+The refactor is done. 后续可以执行：
+
+1. Run the full test suite
+2. Split the extractor module
+3. Commit the change
+```
+
+The list is the question — one option per numbered item, as a multi-select question, because next
+steps can be done together (a single-item list becomes a Yes/No question instead). A bullet or
+dash list is not a question. The same rule is what the extraction prompt tells the model, and
+what `src/fragments.ts` keeps in front of it: see [`tests/e2e/README.md`](tests/e2e/README.md)
+for the end-to-end scenario that pins it.
+
 ## Use
 
 - `ctrl+shift+a` — ask from the last reply.
@@ -93,7 +109,7 @@ upstream license text are in [`NOTICE`](NOTICE).
 ```bash
 npm test          # unit tests only, offline
 npm run typecheck # tsc over every source file
-npm run e2e       # 19 scenarios over `pi --mode rpc`
+npm run e2e       # 20 scenarios over `pi --mode rpc`
 npm run e2e:tui   # 3 scenarios in a real terminal under herdr-core
 npm run verify    # all four, in that order: the full gate
 ```

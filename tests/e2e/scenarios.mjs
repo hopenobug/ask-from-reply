@@ -54,6 +54,16 @@ async function conversationTexts(session) {
 	return (await session.userTexts()).filter((text) => text !== TRIGGER);
 }
 
+/**
+ * What the extractor saw on its last call: the fragments it was handed and the system
+ * prompt it was given. Reading the fake's request log once here keeps every scenario's
+ * `check` from reaching into the request body itself.
+ */
+function lastExtraction(fake) {
+	const body = fake.extractionRequests().at(-1)?.body;
+	return { seen: lastUserText(body), prompt: systemText(body) };
+}
+
 function requireMethod(request, method, hint) {
 	assert.equal(
 		request.method,
@@ -90,6 +100,31 @@ export const CACHE_REPLY = [
 	"1. No cache",
 	"2. Memory cache with TTL",
 	"3. Disk cache across runs",
+].join("\n");
+
+/**
+ * A reply that asks nothing with a "?": it lists the numbered next steps instead. The
+ * extractor has to treat the list as the question, with the introducing sentence above it.
+ */
+const NEXT_STEPS_REPLY = [
+	"The refactor is done. 后续可以执行：",
+	"",
+	"1. Run the full test suite",
+	"2. Split the extractor module",
+	"3. Commit the change",
+].join("\n");
+
+/**
+ * A reply whose numbered list states facts, not choices: a findings report. It must reach the
+ * extractor, and the prompt must arm the model to decline it — every status report would
+ * otherwise pop a dialog.
+ */
+const FINDINGS_REPLY = [
+	"I audited the module. It has three problems:",
+	"",
+	"1. a memory leak in A",
+	"2. a race in B",
+	"3. dead code in C",
 ].join("\n");
 
 /**
@@ -313,6 +348,79 @@ function assertExtractionRefused({ message, notifications }, expected) {
 }
 
 export const SCENARIOS = [
+	{
+		name: "a numbered list of next steps is asked as one multi-select question",
+		reply: NEXT_STEPS_REPLY,
+		extract: questionsJson([
+			{
+				question: "Which steps should I take next?",
+				header: "Next",
+				multiSelect: true,
+				options: [
+					{ label: "Run the full test suite", description: "Check nothing regressed" },
+					{ label: "Split the extractor module", description: "Move the fragment filter out" },
+					{ label: "Commit the change", description: "Land it on main" },
+				],
+			},
+		]),
+		answer(request) {
+			// Steps can be done together, so the question is multi-select: two of the three.
+			requireMethod(request, "input", "a multi-select question (multiSelect: true)");
+			const numbers = optionNumbers(request);
+			assert.ok(numbers.length >= 3, `expected at least 3 option numbers in the title: ${request.title}`);
+			return { value: `${numbers[0]},${numbers[2]}` };
+		},
+		check({ message, fake }) {
+			// The fragments the extractor saw must carry the numbered list, not just the prose.
+			const { seen, prompt } = lastExtraction(fake);
+			for (const item of ["1. Run the full test suite", "2. Split the extractor module", "3. Commit the change"]) {
+				assert.ok(seen.includes(item), `the extractor never saw ${JSON.stringify(item)}: ${JSON.stringify(seen)}`);
+			}
+			assert.ok(seen.includes("后续可以执行"), `the introducing line was dropped: ${JSON.stringify(seen)}`);
+			assert.ok(
+				prompt.includes("numbered list"),
+				`the prompt never tells the model a numbered list is a question: ${prompt.slice(0, 600)}`,
+			);
+			assert.ok(
+				prompt.includes("multi-select"),
+				`the prompt never tells the model a list of next steps is multi-select: ${prompt.slice(0, 900)}`,
+			);
+			const [line] = assertCompactEnvelope(message, { maxLines: 1 });
+			// The question text is the model's, not the reply's, so it cannot anchor the numbered
+			// echo; the answer degrades to the labels — never to a wrong number.
+			assert.equal(line.marker, ":", `an unanchored list answer stays textual: ${line.line}`);
+			assert.equal(
+				line.value,
+				"Run the full test suite, Commit the change",
+				`both picked steps are echoed, in list order: ${line.line}`,
+			);
+		},
+	},
+	{
+		name: "a numbered list of findings is not mistaken for a question",
+		reply: FINDINGS_REPLY,
+		extract: questionsJson([]),
+		answer() {
+			throw new Error("a findings list must not open a dialog");
+		},
+		check({ message, notifications, fake }) {
+			assert.equal(message, null, `nothing to ask means no message, got:\n${message}`);
+			assert.ok(
+				notifications.some((text) => text.includes("The last reply asks no questions")),
+				`expected an "asks no questions" notification, got: ${JSON.stringify(notifications)}`,
+			);
+			// The list still has to reach the extractor: declining is the model's call, not
+			// the fragment filter's — the filter cannot tell facts from choices.
+			const { seen, prompt } = lastExtraction(fake);
+			for (const item of ["1. a memory leak in A", "2. a race in B", "3. dead code in C"]) {
+				assert.ok(seen.includes(item), `the extractor never saw ${JSON.stringify(item)}: ${JSON.stringify(seen)}`);
+			}
+			assert.ok(
+				prompt.includes("reports facts"),
+				`the prompt never tells the model a findings list is not a question: ${prompt.slice(0, 600)}`,
+			);
+		},
+	},
 	{
 		name: "single select echoes the reply's own option number",
 		reply: CACHE_REPLY,
@@ -578,7 +686,7 @@ export const SCENARIOS = [
 		},
 		check(result) {
 			assertExtractionRefused(result, "At most 1 questions are allowed per invocation");
-			const prompt = systemText(result.fake.extractionRequests().at(-1)?.body);
+			const { prompt } = lastExtraction(result.fake);
 			assert.ok(
 				prompt.includes("At most 1 questions"),
 				`the extraction prompt did not state the configured cap:\n${prompt.slice(0, 600)}`,
@@ -595,7 +703,7 @@ export const SCENARIOS = [
 		},
 		check(result) {
 			assertExtractionRefused(result, "At most 2 options are allowed per question");
-			const prompt = systemText(result.fake.extractionRequests().at(-1)?.body);
+			const { prompt } = lastExtraction(result.fake);
 			assert.ok(
 				prompt.includes("2-2 answer options"),
 				`the extraction prompt did not state the configured range:\n${prompt.slice(0, 600)}`,
@@ -623,7 +731,7 @@ export const SCENARIOS = [
 			return { value: request.options[0] };
 		},
 		check({ message, fake }) {
-			const seen = lastUserText(fake.extractionRequests().at(-1)?.body);
+			const { seen } = lastExtraction(fake);
 			assert.ok(seen.includes("Would you like tea?"), `the tail lost the question: ${JSON.stringify(seen)}`);
 			assert.equal(seen, LONG_REPLY_TAIL, "the extractor must see exactly the tail window");
 			assert.ok(seen.length < LONG_REPLY.length, "the whole reply reached the extractor");

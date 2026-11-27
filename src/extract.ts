@@ -7,9 +7,11 @@
  */
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { DEFAULT_CONFIG, type ExtensionConfig } from "./config.ts";
+import { focusQuestionFragments, replyTail } from "./fragments.ts";
+import { systemPrompt } from "./prompt.ts";
 import { checkQuestionShape } from "./question-shape.ts";
 import { normalizeQuestionParams } from "./vendor/tool/normalize-params.ts";
-import { MAX_LABEL_LENGTH, MIN_OPTIONS, type QuestionParams } from "./vendor/tool/types.ts";
+import type { QuestionParams } from "./vendor/tool/types.ts";
 import { validateQuestionnaire } from "./vendor/tool/validate-questionnaire.ts";
 
 /** The config keys that shape one extraction request. */
@@ -24,74 +26,6 @@ export const DEFAULT_EXTRACT_OPTIONS: ExtractOptions = {
 	maxQuestions: DEFAULT_CONFIG.maxQuestions,
 	replyTailChars: DEFAULT_CONFIG.replyTailChars,
 };
-
-/**
- * The extraction prompt. The question/option caps are spelled out here because the model
- * has to aim at them: a post-hoc validator can only reject an oversized answer, while the
- * prompt is what keeps it small in the first place.
- */
-export function systemPrompt(options: ExtractOptions): string {
-	return `You convert the questions an assistant asked into a structured questionnaire.
-You receive the tail of the assistant's latest reply, trimmed to the parts where it asks the user
-a question. Extract every question it asks, and give each one a short header plus
-${MIN_OPTIONS}-${options.maxOptions} answer options the user can pick from.
-
-Reply with compact JSON only — no whitespace, no prose, no code fences:
-{"questions":[{"question":"...","header":"...","multiSelect":false,"options":[{"label":"...","description":"..."}]}]}
-
-Rules:
-- At most ${options.maxQuestions} questions; pick the ${options.maxQuestions} most important if the reply asks more.
-- "question" repeats the question verbatim (or as close as the fragments allow).
-- "header" is a tab label of at most 10 characters.
-- "description" is one short sentence of at most 60 characters with no ending punctuation.
-- Each option "label" is at most ${MAX_LABEL_LENGTH} characters and must be a concrete answer,
-  not a restatement of the question.
-- Never emit an option labelled "Other" or "Type something." — the dialog adds those itself.
-- Emit exactly the keys shown above; never add "preview" or any other key.
-- Set "multiSelect": true only when the question clearly invites several answers at once.
-- If the fragments ask the user nothing, reply {"questions":[]}.`;
-}
-
-/** A bullet / numbered / lettered list item that can belong to a question block. */
-const LIST_LINE = /^\s*(?:[-*+]|\d+[.)]|[A-Za-z][.)])\s+/;
-/** Cap on lines per question block (the question line plus its list). */
-const MAX_BLOCK_LINES = 12;
-
-/**
- * Keep only the parts of `reply` where it asks the user something: each line containing a
- * question mark opens a block that also swallows the list lines following it (the option
- * list the question refers to). Everything between blocks is dropped — the extractor
- * only needs the questions and their candidate options, not the surrounding prose.
- *
- * A reply with no question lines at all is returned unchanged, so a question phrased
- * without a literal "?" still reaches the extractor.
- */
-export function focusQuestionFragments(reply: string): string {
-	const lines = reply.split("\n");
-	const blocks: string[] = [];
-	let current: string[] | undefined;
-	const closeBlock = () => {
-		if (current && current.length > 0) blocks.push(current.join("\n"));
-		current = undefined;
-	};
-	for (const line of lines) {
-		const trimmed = line.trim();
-		if (trimmed.includes("?") || trimmed.includes("？")) {
-			closeBlock();
-			current = [line];
-			continue;
-		}
-		if (!current) continue;
-		if (trimmed.length === 0 || LIST_LINE.test(line)) {
-			if (current.length < MAX_BLOCK_LINES) current.push(line);
-			else closeBlock();
-		} else {
-			closeBlock();
-		}
-	}
-	closeBlock();
-	return blocks.length === 0 ? reply : blocks.join("\n");
-}
 
 /** Concatenated text blocks of the last assistant message that has any text. */
 export function lastAssistantText(ctx: ExtensionContext): string | undefined {
@@ -123,16 +57,6 @@ function extractJsonObject(raw: string): string | undefined {
 	const end = unfenced.lastIndexOf("}");
 	if (start === -1 || end <= start) return undefined;
 	return unfenced.slice(start, end + 1);
-}
-
-/**
- * The tail of `reply`, at most `limit` characters. Counted in code points rather than
- * UTF-16 units so an emoji or a CJK character costs one, and cut from the end because a
- * long reply usually builds up to the questions at its end.
- */
-export function replyTail(reply: string, limit: number): string {
-	const chars = Array.from(reply);
-	return chars.length <= limit ? reply : chars.slice(chars.length - limit).join("");
 }
 
 /** `60000` reads badly in a notification; `60s` does not. */

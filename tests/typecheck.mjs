@@ -55,6 +55,7 @@ const SOURCES = [
 	"src/index.ts",
 	"src/questionnaire.ts",
 	"src/extract.ts",
+	"src/prompt.ts",
 	"src/format.ts",
 	"src/config.ts",
 ];

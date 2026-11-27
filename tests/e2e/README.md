@@ -6,7 +6,7 @@ extraction output, delay and failure is chosen by the test.
 
 | Command | What it proves |
 | --- | --- |
-| `npm run e2e` | 17 scenarios over `pi --mode rpc`: extraction → questionnaire → compact answer envelope back in the conversation, plus both settings-file locations and every extractor failure mode |
+| `npm run e2e` | 20 scenarios over `pi --mode rpc`: extraction → questionnaire → compact answer envelope back in the conversation, plus both settings-file locations and every extractor failure mode |
 | `npm run e2e:tui` | 3 scenarios in a real terminal under herdr-core: the dialog mounts, a digit answers it, the answer line reaches the transcript; the Submit tab shows one preview at a time and `p` flips it; `submit: "editor"` parks the answers in the input box and sends nothing until enter |
 
 `npm test` stays offline and unit-only: the files here are named `*.e2e.mjs` on purpose, so
@@ -98,16 +98,23 @@ sessions get it through the spawned process environment. `hc run` has no environ
   `extension_ui_request`s programmatically.
 - `fake-model.mjs` — the scripted model (HTTP + SSE) and the request log.
 - `fake-provider.ts` — the e2e-only extension that registers it as `fake/fake-mini`.
-- `scenarios.mjs` — the 19 RPC scenarios (`prompt`, scripted replies, answer script,
+- `scenarios.mjs` — the 20 RPC scenarios (`prompt`, scripted replies, answer script,
   assertions), the shared envelope assertions and the settings-file plumbing.
 - `rpc.e2e.mjs`, `tui.e2e.mjs` — `node:test` entry points (`npm run e2e`, `npm run e2e:tui`).
 
-## The 19 RPC scenarios
+## The 20 RPC scenarios
 
 Happy paths: numbered single select (`Cache → 2`), multi-select with custom text
 (`1, 3 | custom text`), `Type something.` answered with free text (`Cache: PascalCase`),
 free text typed over the option list, cancel (no message, only a notification), a reply with
 no questions, an empty multi-select submission (no message).
+
+A reply that asks nothing with a `?` but lists numbered next steps (`后续可以执行：` then
+`1. … 2. … 3. …`) is a question too: the scenario asserts the extractor saw the whole list
+plus the introducing line, that the prompt calls a numbered list a question and a multi-select
+one, and that two of the three steps can be picked at once. Because the extracted question text
+is the model's wording, not the reply's, the numbered echo cannot anchor and the answer degrades
+to the labels (`Next: Run the full test suite, Commit the change`).
 
 Settings: `submit: "editor"` degrades to a send outside the TUI; a missing
 `extractionModel` falls back to the session model with a warning.
