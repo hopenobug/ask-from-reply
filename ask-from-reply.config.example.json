@@ -1,0 +1,17 @@
+{
+	"$comment": [
+		"ask-from-reply settings. Copy this file to <agent dir>/ask-from-reply.config.json (~/.pi/agent/, next to pi's settings.json), or point ASK_FROM_REPLY_CONFIG at it.",
+		"\"submit\": \"send\" hands the answers straight to the conversation; \"editor\" only fills the input box so you can edit them first (TUI only — other modes send instead).",
+		"\"extractionModel\": \"provider/modelId\" of the model that extracts the questions (for example \"openai/gpt-4o-mini\"); empty uses the session model.",
+		"\"extractionTimeoutMs\": how long the extraction request may take before it is aborted and reported (1000..600000).",
+		"\"maxQuestions\"/\"maxOptions\": caps for the questionnaire, also stated in the extraction prompt (1..9 / 2..9).",
+		"\"replyTailChars\": only the last N characters of the reply are shown to the extractor (50..100000).",
+		"Read on every run, so no restart is needed; delete a key to get its default back."
+	],
+	"submit": "send",
+	"extractionModel": "",
+	"extractionTimeoutMs": 60000,
+	"maxQuestions": 4,
+	"maxOptions": 4,
+	"replyTailChars": 1000
+}

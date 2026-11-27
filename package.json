@@ -1,0 +1,29 @@
+{
+	"name": "ask-from-reply",
+	"version": "0.1.0",
+	"private": true,
+	"description": "Turn the questions in the assistant's latest reply into an interactive questionnaire",
+	"type": "module",
+	"keywords": [
+		"pi-package",
+		"pi-extension"
+	],
+	"pi": {
+		"extensions": [
+			"./src/index.ts"
+		]
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-ai": "*",
+		"@earendil-works/pi-coding-agent": "*",
+		"@earendil-works/pi-tui": "*",
+		"typebox": "*"
+	},
+	"scripts": {
+		"test": "node --test tests/",
+		"typecheck": "node tests/typecheck.mjs",
+		"e2e": "node --test tests/e2e/rpc.e2e.mjs",
+		"e2e:tui": "node --test tests/e2e/tui.e2e.mjs",
+		"verify": "npm run typecheck && npm test && npm run e2e && npm run e2e:tui"
+	}
+}

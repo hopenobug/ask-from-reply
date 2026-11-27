@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+
+# local agent / index artifacts
+.codegraph/
+.pi/
+.agents/
+.omp/
+.skill-lock.json
+skills-lock.json
+AGENTS.md
+
+# local config overrides (keep the *.example.json template)
+ask-from-reply.config.json
+
+# temp & logs
+tmp/
+*.log
+*.tmp
+*.exe
+
+# os / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
