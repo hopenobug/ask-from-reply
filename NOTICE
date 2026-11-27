@@ -1,0 +1,61 @@
+ask-from-reply
+Copyright (c) 2026 hopenobug
+SPDX-License-Identifier: MIT
+
+This product includes software derived from third parties, listed below.
+
+--------------------------------------------------------------------------------
+@juicesharp/rpiv-ask-user-question 2.15.0
+--------------------------------------------------------------------------------
+Source:    https://github.com/juicesharp/rpiv-mono
+           packages/rpiv-ask-user-question
+Author:    juicesharp
+License:   MIT
+
+Files:     src/vendor/**  (all files under src/vendor/)
+
+           Verbatim copies: presentation.ts, rpc-fallback.ts,
+           state/external-editor.ts, state/row-intent.ts, state/selectors/*,
+           tool/format-answer.ts, tool/normalize-params.ts,
+           tool/response-envelope.ts, view/component-binding.ts,
+           view/components/*, view/props-adapter.ts, view/scroll-window.ts,
+           view/stateful-view.ts, view/tab-components.ts, view/transcript.ts
+
+           Modified copies: config.ts, state/build-questionnaire.ts,
+           state/i18n-bridge.ts, state/key-router.ts,
+           state/questionnaire-session.ts, state/state-reducer.ts,
+           state/state.ts, tool/types.ts, tool/validate-questionnaire.ts,
+           view/dialog-builder.ts, view/dialog-copy.ts,
+           view/tab-content-strategy.ts
+
+           Extracted from upstream ask-user-question.ts (no standalone
+           upstream file): items.ts, view/sent-text-block.ts
+
+           Local modifications add the sent-text preview tab, a tighter
+           validation API, and drop the tool registration, the inbound answer
+           channel and the rpiv-config JSON file reader. See the header
+           comments in each file for the specific changes.
+
+Full upstream license text:
+
+MIT License
+
+Copyright (c) 2026 juicesharp
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

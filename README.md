@@ -78,6 +78,16 @@ defaults, silently.
 Anything unusable — bad JSON, an unknown `submit`, a number out of range — falls back to
 that key's default and reports one warning; a missing file is not a problem.
 
+## License
+
+MIT — see [`LICENSE`](LICENSE).
+
+The dialog under `src/vendor/` is derived from
+[`@juicesharp/rpiv-ask-user-question`](https://github.com/juicesharp/rpiv-mono) 2.15.0
+(MIT, © 2026 juicesharp), vendored because that package registers its tool as
+`model-only` and exports no UI. Which files are verbatim, which are modified, and the
+upstream license text are in [`NOTICE`](NOTICE).
+
 ## Tests
 
 ```bash
