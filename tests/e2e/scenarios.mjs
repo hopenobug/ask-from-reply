@@ -107,7 +107,7 @@ export const CACHE_REPLY = [
  * extractor has to treat the list as the question, with the introducing sentence above it.
  */
 const NEXT_STEPS_REPLY = [
-	"The refactor is done. 后续可以执行：",
+	"The refactor is done. Next steps:",
 	"",
 	"1. Run the full test suite",
 	"2. Split the extractor module",
@@ -376,7 +376,7 @@ export const SCENARIOS = [
 			for (const item of ["1. Run the full test suite", "2. Split the extractor module", "3. Commit the change"]) {
 				assert.ok(seen.includes(item), `the extractor never saw ${JSON.stringify(item)}: ${JSON.stringify(seen)}`);
 			}
-			assert.ok(seen.includes("后续可以执行"), `the introducing line was dropped: ${JSON.stringify(seen)}`);
+			assert.ok(seen.includes("Next steps"), `the introducing line was dropped: ${JSON.stringify(seen)}`);
 			assert.ok(
 				prompt.includes("numbered list"),
 				`the prompt never tells the model a numbered list is a question: ${prompt.slice(0, 600)}`,

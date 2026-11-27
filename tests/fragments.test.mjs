@@ -115,6 +115,8 @@ test("a list longer than the block cap is split, never dropping a line", () => {
 
 test("replyTail keeps the last characters, counted in code points", () => {
 	assert.equal(replyTail("abcdef", 3), "def");
-	assert.equal(replyTail("中文中文", 2), "中文");
+	// An emoji is two UTF-16 units but one code point: slicing by units would cut a
+	// surrogate pair in half, so `Array.from` is what makes the count honest.
+	assert.equal(replyTail("👍👍👍", 2), "👍👍");
 	assert.equal(replyTail("short", 99), "short");
 });

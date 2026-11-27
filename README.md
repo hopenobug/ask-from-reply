@@ -19,7 +19,7 @@ becomes a dialog with one question and three options. Picking the second one app
 A reply that lists numbered next steps asks something too, even without a `?`:
 
 ```
-The refactor is done. 后续可以执行：
+The refactor is done. Next steps:
 
 1. Run the full test suite
 2. Split the extractor module

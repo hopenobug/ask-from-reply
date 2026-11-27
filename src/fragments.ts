@@ -25,7 +25,7 @@ function lineAbove(lines: string[], index: number): number | undefined {
  * Keep only the parts of `reply` where it asks the user something.
  *
  * A block opens at a line containing a question mark, and at a numbered list: that second
- * shape is the "后续可以执行" case — the list of things the user could do next *is* the
+ * shape is the "next steps" case — the list of things the user could do next *is* the
  * question, so the sentence introducing it is kept as the question text. Each block
  * swallows the list lines following it (the candidate options); everything between blocks
  * is dropped, since the extractor only needs the questions and their options, not the

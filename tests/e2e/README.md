@@ -109,7 +109,7 @@ Happy paths: numbered single select (`Cache → 2`), multi-select with custom te
 free text typed over the option list, cancel (no message, only a notification), a reply with
 no questions, an empty multi-select submission (no message).
 
-A reply that asks nothing with a `?` but lists numbered next steps (`后续可以执行：` then
+A reply that asks nothing with a `?` but lists numbered next steps (an introducing line then
 `1. … 2. … 3. …`) is a question too: the scenario asserts the extractor saw the whole list
 plus the introducing line, that the prompt calls a numbered list a question and a multi-select
 one, and that two of the three steps can be picked at once. Because the extracted question text
