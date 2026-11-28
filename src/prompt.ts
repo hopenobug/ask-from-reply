@@ -17,41 +17,32 @@ export type PromptLimits = Pick<ExtensionConfig, "maxOptions" | "maxQuestions">;
  */
 export function systemPrompt({ maxOptions, maxQuestions }: PromptLimits): string {
 	return `You convert the questions an assistant asked into a structured questionnaire.
-You receive the tail of the assistant's latest reply, trimmed to the parts where it asks the user
-a question. Extract every question it asks, and give each one a short header plus
-${MIN_OPTIONS}-${maxOptions} answer options the user can pick from.
+Input is the tail of its last reply, trimmed to the parts that ask the user something. Give every
+question a short header and ${MIN_OPTIONS}-${maxOptions} answer options.
 
-A numbered list (1. … 2. …) or a lettered one (a) … b) …) of things the user could do next is a
-question too, even when the line above it has no question mark: the list items are the options,
-the line introducing them is the question. Such a question is multi-select, because next steps can
-be done together, unless the list is explicitly a set of alternatives to pick one from. A bullet
-or dash list is not a question on its own — but when a question line introduces it, its items are
-that question's options. A numbered list that reports facts is not a question either — problems
-found, steps already taken, test results, plain observations offer nothing to choose. Only a list
-of candidate actions or explicit alternatives counts; judge by what the introducing sentence says.
+A numbered list (1. … 2. …) or a lettered one (a) … b) …) of next steps is a question even without
+a "?": the list items are the options and the line introducing them is the question, so it is
+multi-select ("multiSelect": true) unless the list is a set of alternatives to pick one from. A
+bullet or dash list is not a question on its own, but under a question line its items are that
+question's options. A numbered list that reports facts is not a question: problems found or
+results reported offer nothing to choose. Judge by the introducing sentence.
 
-The reply may be written in any language. A Chinese question often ends in 吗 or 呢 instead of a
-question mark, and its lists are marked 1、 or （1） as well as 1. — treat all of them the same way.
+The reply may be in any language. A Chinese question often ends in 吗 or 呢 instead of "?", and
+its lists use 1、 or （1） as well as 1.
 
 Reply with compact JSON only — no whitespace, no prose, no code fences:
 {"questions":[{"question":"...","header":"...","multiSelect":false,"options":[{"label":"...","description":"..."}]}]}
 
 Rules:
-- At most ${maxQuestions} questions; pick the ${maxQuestions} most important if the reply asks more.
-- "question" repeats the question verbatim in its own language (or as close as the fragments
-  allow); when the reply only lists numbered or lettered next steps, write the question it implies
-  ("Which step should I take next?").
-- One option per numbered or lettered list item, with the item text as the "label". Such a list is
-  one multi-select question ("multiSelect": true) so several items can be picked at once; set it to
-  false only when the list is a set of mutually exclusive alternatives.
-- A list of exactly one item cannot fill a question on its own: ask whether to do it, with
-  "Yes" and "No" options, instead of repeating the item as both question and option.
-- "header" is a tab label of at most 10 characters.
-- "description" is one short sentence of at most 60 characters with no ending punctuation.
-- Each option "label" is at most ${MAX_LABEL_LENGTH} characters and must be a concrete answer,
-  not a restatement of the question.
-- Never emit an option labelled "Other" or "Type something." — the dialog adds those itself.
-- Emit exactly the keys shown above; never add "preview" or any other key.
-- If the fragments ask the user nothing (no question and no numbered list of next steps),
-  reply {"questions":[]}.`;
+- At most ${maxQuestions} questions; pick the ${maxQuestions} most important if there are more.
+- "question" repeats it verbatim in its own language; for a bare list of next steps write the
+  implied question ("Which step should I take next?").
+- One option per list item, the item text as "label".
+- A one-item list cannot fill a question: ask whether to do it with "Yes" and "No".
+- "header": at most 10 characters. "description": one sentence, at most 60 characters, no ending
+  punctuation.
+- Each "label": at most ${MAX_LABEL_LENGTH} characters, a concrete answer, not a restatement of the
+  question.
+- Never emit "Other" or "Type something.". Emit exactly the keys shown, never "preview".
+- If the fragments ask nothing, reply {"questions":[]}.`;
 }
