@@ -10,13 +10,48 @@
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // `here` is the tests/ directory; sources and the generated tsconfig live one level up.
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
-const installRoot = resolve(root, "../../install");
+
+/**
+ * Where pi's agent directory is — the one holding `install/` and `npm/`.
+ *
+ * It cannot be derived from `root` alone: this package may be checked out anywhere, not
+ * just at `<agent>/<owner>/<repo>` (the layout `resolve(root, "../../install")` assumed, which
+ * broke as soon as the repo sat one directory deeper). So the candidates are, in order, the
+ * env var pi itself uses (`PI_CODING_AGENT_DIR`), every ancestor of this checkout, and the
+ * default `~/.pi/agent`. The first one that actually holds an `install/current-version` wins.
+ */
+function findAgentDir() {
+	const fromEnv = process.env.PI_CODING_AGENT_DIR;
+	const ancestors = [];
+	for (let dir = root; ; dir = dirname(dir)) {
+		ancestors.push(dir);
+		if (dirname(dir) === dir) break;
+	}
+	const candidates = [
+		...(fromEnv ? [fromEnv] : []),
+		...ancestors.map((dir) => join(dir, ".pi", "agent")),
+		...ancestors,
+		join(homedir(), ".pi", "agent"),
+	];
+	const found = candidates.find((dir) => existsSync(join(dir, "install", "current-version")));
+	if (found) return found;
+	throw new Error(
+		`Cannot find pi's agent directory (the one holding install/current-version); tried:\n  ${candidates.join("\n  ")}\nSet PI_CODING_AGENT_DIR to point at it.`,
+	);
+}
+
+const agentDir = findAgentDir();
+// A managed install may live outside the agent directory; pi exports the path it uses.
+const managedRoot = process.env.PI_MANAGED_INSTALL_ROOT;
+const installRoot =
+	managedRoot && existsSync(join(managedRoot, "current-version")) ? managedRoot : join(agentDir, "install");
 const version = readFileSync(join(installRoot, "current-version"), "utf8").trim();
 const releaseModules = join(installRoot, "releases", version, "node_modules");
 if (!existsSync(releaseModules)) {
@@ -24,7 +59,7 @@ if (!existsSync(releaseModules)) {
 	process.exit(1);
 }
 
-const npmModules = resolve(root, "../../npm/node_modules");
+const npmModules = join(agentDir, "npm", "node_modules");
 const map = (specifier, ...candidates) => {
 	const found = candidates.find((candidate) => existsSync(candidate));
 	if (!found) throw new Error(`Cannot resolve ${specifier}; tried:\n  ${candidates.join("\n  ")}`);
