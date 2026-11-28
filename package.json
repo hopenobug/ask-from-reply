@@ -1,6 +1,6 @@
 {
 	"name": "ask-from-reply",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"description": "Turn the questions in the assistant's latest reply into an interactive questionnaire",
 	"license": "MIT",
 	"author": "hopenobug",
